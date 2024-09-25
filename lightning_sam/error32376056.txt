@@ -1,6 +1,0 @@
-[rank: 0] Seed set to 1337
-Missing logger folder: /home/mdjaberal.nahian/lightning-sam/lightning_sam/Error_OUT/Out_H_100_Decoder_error_82_scratch/lightning-sam
-[rank: 0] Seed set to 1337
-Missing logger folder: /home/mdjaberal.nahian/lightning-sam/lightning_sam/Error_OUT/Out_H_100_Decoder_error_41_Scratch/lightning-sam
-[rank: 0] Seed set to 1337
-Missing logger folder: /home/mdjaberal.nahian/lightning-sam/lightning_sam/Error_OUT/Out_H_100_Decoder_error_14/lightning-sam
