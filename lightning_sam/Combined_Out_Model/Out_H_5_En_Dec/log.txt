@@ -1,0 +1,18 @@
+loading annotations into memory...
+Done (t=7.17s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=1.62s)
+creating index...
+index created!
+Error processing annotation 253345: Argument 'bb' has incorrect type (expected numpy.ndarray, got list)
+Error processing annotation 127620: Argument 'bb' has incorrect type (expected numpy.ndarray, got list)
+Error processing annotation 127637: input type is not supported.
+Error processing annotation 127663: Argument 'bb' has incorrect type (expected numpy.ndarray, got list)
+Error processing annotation 151686: input type is not supported.
+Error processing annotation 151709: input type is not supported.
+Error processing annotation 151720: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (7,) + inhomogeneous part.
+Error processing annotation 134273: Argument 'bb' has incorrect type (expected numpy.ndarray, got list)
+Error processing annotation 134289: input type is not supported.
+Error processing annotation 134291: Argument 'bb' has incorrect type (expected numpy.ndarray, got list)

@@ -9,6 +9,45 @@ from segment_anything.utils.transforms import ResizeLongestSide
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+# class COCODataset_double_annotation(Dataset):
+
+#     def __init__(self, root_dir, annotation_file, annotation_file2, transform=None):
+#         self.root_dir = root_dir
+#         self.transform = transform
+#         self.coco = COCO(annotation_file)
+#         self.image_ids = list(self.coco.imgs.keys())
+
+#         # Filter out image_ids without any annotations
+#         self.image_ids = [image_id for image_id in self.image_ids if len(self.coco.getAnnIds(imgIds=image_id)) > 0]
+
+#     def __len__(self):
+#         return len(self.image_ids)
+
+#     def __getitem__(self, idx):
+#         image_id = self.image_ids[idx]
+#         image_info = self.coco.loadImgs(image_id)[0]
+#         image_path = os.path.join(self.root_dir, image_info['file_name'])
+#         image = cv2.imread(image_path)
+#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+#         ann_ids = self.coco.getAnnIds(imgIds=image_id)
+#         anns = self.coco.loadAnns(ann_ids)
+#         bboxes = []
+#         masks = []
+
+#         for ann in anns:
+#             x, y, w, h = ann['bbox']
+#             bboxes.append([x, y, x + w, y + h])
+#             mask = self.coco.annToMask(ann)
+#             masks.append(mask)
+#         print("before image shape:", image.shape)
+#         if self.transform:
+#             image, masks, bboxes = self.transform(image, masks, np.array(bboxes))
+#         print("after image shape:", image.shape)
+        # bboxes = np.stack(bboxes, axis=0)
+        # masks = np.stack(masks, axis=0)
+        # return image, torch.tensor(bboxes), torch.tensor(masks).float()
+
 
 class COCODataset(Dataset):
 
@@ -24,6 +63,7 @@ class COCODataset(Dataset):
     def __len__(self):
         return len(self.image_ids)
 
+
     def __getitem__(self, idx):
         image_id = self.image_ids[idx]
         image_info = self.coco.loadImgs(image_id)[0]
@@ -36,19 +76,65 @@ class COCODataset(Dataset):
         bboxes = []
         masks = []
 
+        # for ann in anns:
+        #     x, y, w, h = ann['bbox']
+        #     bboxes.append([x, y, x + w, y + h])
+        #     mask = self.coco.annToMask(ann)
+        #     masks.append(mask)
         for ann in anns:
             x, y, w, h = ann['bbox']
             bboxes.append([x, y, x + w, y + h])
-            mask = self.coco.annToMask(ann)
-            masks.append(mask)
-
+            if 'segmentation' not in ann or not ann['segmentation']:
+                print(f"Skipping invalid segmentation for annotation {ann['id']}")
+                continue
+            try:
+                mask = self.coco.annToMask(ann)
+                masks.append(mask)
+            except Exception as e:
+                print(f"Error processing annotation {ann['id']}: {e}")
+        # print("before image shape:", image.shape)
+        bboxes = np.array(bboxes)
+        # Before transformations
+        print("Image shape:", image.shape)
+        print("Masks count:", len(masks))
+        print("BBoxes shape:", bboxes.shape)
         if self.transform:
-            image, masks, bboxes = self.transform(image, masks, np.array(bboxes))
-
+            image, masks, bboxes = self.transform(image, masks, bboxes)
+        # print("after image shape:", image.shape)
         bboxes = np.stack(bboxes, axis=0)
         masks = np.stack(masks, axis=0)
         return image, torch.tensor(bboxes), torch.tensor(masks).float()
 
+    # def __getitem__(self, idx):
+    #     image_id = self.image_ids[idx]
+    #     image_info = self.coco.loadImgs(image_id)[0]
+    #     image_path = os.path.join(self.root_dir, image_info['file_name'])
+    #     image = cv2.imread(image_path)
+    #     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    #     ann_ids = self.coco.getAnnIds(imgIds=image_id)
+    #     anns = self.coco.loadAnns(ann_ids)
+    #     bboxes = []
+    #     masks = []
+
+    #     for ann in anns:
+    #         x, y, w, h = ann['bbox']
+    #         bboxes.append([x, y, x + w, y + h])
+    #         if 'segmentation' not in ann or not ann['segmentation']:
+    #             print(f"Skipping invalid segmentation for annotation {ann['id']}")
+    #             continue
+    #         try:
+    #             mask = self.coco.annToMask(ann)
+    #             masks.append(mask)
+    #         except Exception as e:
+    #             print(f"Error processing annotation {ann['id']}: {e}")
+    #     # print("before image shape:", image.shape)
+    #     if self.transform:
+    #         image, masks, bboxes = self.transform(image, masks, np.array(bboxes))
+    #     # print("after image shape:", image.shape)
+    #     bboxes = np.stack(bboxes, axis=0)
+    #     masks = np.stack(masks, axis=0)
+    #     return image, torch.tensor(bboxes), torch.tensor(masks).float()
 
 def collate_fn(batch):
     images, bboxes, masks = zip(*batch)

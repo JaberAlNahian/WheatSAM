@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 import cv2
 import torch
 from box import Box
@@ -31,6 +31,7 @@ class AverageMeter:
 
 def calc_iou(pred_mask: torch.Tensor, gt_mask: torch.Tensor):
     pred_mask = (pred_mask >= 0.5).float()
+    print(f"Predicted mask shape: {pred_mask.shape}, Ground truth mask shape: {gt_mask.shape}")
     intersection = torch.sum(torch.mul(pred_mask, gt_mask), dim=(1, 2))
     union = torch.sum(pred_mask, dim=(1, 2)) + torch.sum(gt_mask, dim=(1, 2)) - intersection
     epsilon = 1e-7
@@ -49,13 +50,47 @@ def draw_image(image, masks, boxes, labels, alpha=0.4):
     return image.numpy().transpose(1, 2, 0)
 
 
+
+def draw_binary_mask(image, masks, alpha=0.4):
+    """
+    Creates a binary mask image by overlaying masks on a black background.
+
+    Args:
+        image: The original image as a numpy array (H, W, C).
+        masks: A tensor of shape (N, H, W) representing the segmentation masks.
+        alpha: The alpha value for blending the masks with the background.
+
+    Returns:
+        A numpy array of shape (H, W) representing the binary mask image.
+    """
+
+    # Convert image to grayscale and normalize to 0-1
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_gray = image_gray / 255.0
+
+    # Create a black background image
+    mask_image = np.zeros_like(image_gray)
+
+    # Convert masks to numpy array and normalize to 0-1
+    masks = masks.cpu().numpy()
+    masks = np.clip(masks, 0, 1)
+
+    # Overlay masks on the black background
+    mask_image = np.maximum(mask_image, masks)
+
+    # Threshold to create a binary mask
+    mask_image = (mask_image > 0).astype(np.uint8) * 255
+
+    return mask_image
+
+
 def visualize(cfg: Box):
     model = Model(cfg)
     model.setup()
     model.eval()
     model.cuda()
-    dataset = COCODataset(root_dir=cfg.dataset.val.root_dir,
-                          annotation_file=cfg.dataset.val.annotation_file,
+    dataset = COCODataset(root_dir=cfg.dataset.test.root_dir,
+                          annotation_file=cfg.dataset.test.annotation_file,
                           transform=None)
     predictor = model.get_predictor()
     os.makedirs(cfg.out_dir, exist_ok=True)
@@ -81,10 +116,15 @@ def visualize(cfg: Box):
             boxes=transformed_boxes,
             multimask_output=False,
         )
+        print(masks.dtype)
+        print(masks.shape)
+        # image_output = draw_image(image, masks.squeeze(1), boxes=None, labels=None)q
         image_output = draw_image(image, masks.squeeze(1), boxes=None, labels=None)
+        print(image_output.shape)
+        print("saving to : ", image_output_path)
         cv2.imwrite(image_output_path, image_output)
 
 
 if __name__ == "__main__":
-    from config import cfg
+    from config_Test import cfg
     visualize(cfg)

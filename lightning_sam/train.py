@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 import lightning as L
@@ -6,7 +7,7 @@ import segmentation_models_pytorch as smp
 import torch
 import torch.nn.functional as F
 from box import Box
-from config import cfg
+from config_updated import cfg
 from dataset import load_datasets
 from lightning.fabric.fabric import _FabricOptimizer
 from lightning.fabric.loggers import TensorBoardLogger
@@ -19,6 +20,11 @@ from utils import calc_iou
 
 torch.set_float32_matmul_precision('high')
 
+# Path to save the log file
+log_file_path = os.path.join(cfg.out_dir, "log.txt")
+
+# Redirect stdout to the log file
+sys.stdout = open(log_file_path, "w")
 
 def validate(fabric: L.Fabric, model: Model, val_dataloader: DataLoader, epoch: int = 0):
     model.eval()
@@ -50,7 +56,14 @@ def validate(fabric: L.Fabric, model: Model, val_dataloader: DataLoader, epoch: 
     fabric.print(f"Saving checkpoint to {cfg.out_dir}")
     state_dict = model.model.state_dict()
     if fabric.global_rank == 0:
-        torch.save(state_dict, os.path.join(cfg.out_dir, f"epoch-{epoch:06d}-f1{f1_scores.avg:.2f}-ckpt.pth"))
+        # Save the last epoch trained file
+        torch.save(state_dict, os.path.join(cfg.out_dir, "last_epoch.pth"))
+        # Check if the current epoch has the best F1 score
+        if epoch == cfg.num_epochs - 1 or f1_scores.avg >= fabric.best_f1_score:
+            # Save the best epoch trained file
+            torch.save(state_dict, os.path.join(cfg.out_dir, "best_epoch.pth"))
+            # Update the best F1 score
+            fabric.best_f1_score = f1_scores.avg
     model.train()
 
 
@@ -118,7 +131,6 @@ def train_sam(
                          f' | IoU Loss [{iou_losses.val:.4f} ({iou_losses.avg:.4f})]'
                          f' | Total Loss [{total_losses.val:.4f} ({total_losses.avg:.4f})]')
 
-
 def configure_opt(cfg: Box, model: Model):
 
     def lr_lambda(step):
@@ -161,7 +173,7 @@ def main(cfg: Box) -> None:
 
     train_sam(cfg, fabric, model, optimizer, scheduler, train_data, val_data)
     validate(fabric, model, val_data, epoch=0)
-
+    sys.stdout.close()
 
 if __name__ == "__main__":
     main(cfg)

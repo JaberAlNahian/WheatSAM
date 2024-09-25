@@ -1,12 +1,13 @@
 from box import Box
 
 config = {
-    "num_devices": 4,
-    "batch_size": 12,
-    "num_workers": 4,
-    "num_epochs": 20,
+    "random_state": 42,
+    "num_devices": 1,
+    "batch_size": 2,
+    "num_workers": 8,
+    "num_epochs": 50,
     "eval_interval": 2,
-    "out_dir": "out/training",
+    "out_dir": "/home/mdjaberal.nahian/lightning-sam/OUTPUTS_Vit_B",
     "opt": {
         "learning_rate": 8e-4,
         "weight_decay": 1e-4,
@@ -15,8 +16,9 @@ config = {
         "warmup_steps": 250,
     },
     "model": {
-        "type": 'vit_h',
-        "checkpoint": "sam_vit_h_4b8939.pth",
+        "type": 'vit_b',
+        # "checkpoint": "/home/mdjaberal.nahian/output_wheat_head_large_1/best_epoch.pth",
+        "checkpoint": "/home/mdjaberal.nahian/sam_vit_b_01ec64.pth",
         "freeze": {
             "image_encoder": True,
             "prompt_encoder": True,
@@ -25,13 +27,22 @@ config = {
     },
     "dataset": {
         "train": {
-            "root_dir": "/coco/coco2017/train2017",
-            "annotation_file": "/coco/coco2017/annotations/instances_train2017.json"
+            "root_dir": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/train",
+            "annotation_file": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/train_annotations.coco.json"
         },
         "val": {
-            "root_dir": "/coco/coco2017/val2017",
-            "annotation_file": "/coco/coco2017/annotations/instances_val2017.json"
+            "root_dir": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/valid",
+            "annotation_file": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/valid_annotations.coco.json"
+        },
+         'bbox': {
+            'annotation_file': '/home/mdjaberal.nahian/FasterRCNN/Outputs/Valid_Pre_Matched_Image_V2i/_annotations.json'
+        },
+        "test": {
+            "root_dir": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/test",
+            "annotation_file": "/home/mdjaberal.nahian/wheat_segmentation.v2i.coco-segmentation/test_annotations.coco.json",
+            "bbox_annotation_file":'/home/mdjaberal.nahian/FasterRCNN/Outputs/Test_Pre_Matched_V2i/_annotations.json'
         }
+        
     }
 }
 
